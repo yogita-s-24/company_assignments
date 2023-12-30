@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              clifford: "#da373d",
+            },
+          },
+        },
+      };
+    </script>
+
+    <title>Text Editor</title>
+
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .content-auto {
+          content-visibility: auto;
+        }
+      }
+    </style>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: "Arial", sans-serif;
+      }
+
+      #text-editor {
+        display: flex;
+        flex-direction: column;
+        height: 400px;
+        width: 1100px;
+        margin: 30px auto;
+      }
+
+      #toolbar {
+        display: flex;
+        padding: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px 10px 0 0;
+      }
+
+      #font-dropdown,
+      #size-dropdown {
+        margin-right: 10px;
+      }
+
+      #canvas {
+        position: relative;
+        flex-grow: 1;
+        overflow: hidden;
+      }
+
+      .text-element {
+        position: absolute;
+        user-select: none;
+        cursor: grab;
+      }
+
+      .text-element.selected {
+        border: 2px solid blue;
+      }
+    </style>
+  </head>
+  <body class="bg-violet-200">
+    <div id="text-editor" class="bg-white rounded-lg">
+      <div id="toolbar">
+        <select id="font-dropdown" onchange="fontFamiliy()" class="rounded-sm">
+          <option value="Courier New">Courier New</option>
+          <option value="Tahoma">Tahoma (sans-serif)</option>
+          <option value="Garamond">Garamond</option>
+          <option value="cursive">Cursive</option>
+          <option value="Verdana">Verdana</option>
+          <!-- Add more font options as needed -->
+        </select>
+
+        <input
+          type="number"
+          class="w-20 rounded-sm"
+          placeholder="20"
+          id="size-num"
+          onchange="fontSize()"
+          class="rounded-sm"
+          value="20"
+          max="50"
+          min="10" />
+
+        <input
+          type="color"
+          id="color-picker"
+          class="h-10 w-10 my-auto mx-2 cursor-grab rounded-lg"
+          style="border: solid 2px grey; border-radius: 5px"
+          value="#000000"
+          onchange="colorSetter()" />
+
+        <input 
+        type="text" 
+        id="text-input" 
+        class="rounded-s-sm"
+        />
+
+        <button
+          type="button"
+          class="button bg-violet-900 text-white px-5 rounded-e-lg"
+          onclick="addText()">
+          Add Text
+        </button>
+
+        <button
+          type="button"
+          class="button bg-violet-900 text-white px-5 ms-2 rounded-lg"
+          onclick="undoData()">
+          ⬅️Undo
+        </button>
+
+        <button
+          type="button"
+          class="button bg-violet-900 text-white px-5 ms-2 rounded-lg"
+          onclick="redoData()">
+          Redo➡️
+        </button>
+
+        <button
+          type="button"
+          class="bg-violet-900 text-white px-5 ms-2 rounded-lg"
+          onclick="clearText()">
+          Clear❌
+        </button>
+      </div>
+
+      <div id="canvas" class="mx-auto"></div>
+    </div>
+
+    <script>
+      const text = JSON.parse(localStorage.getItem("text")) || [];
+      let history = [];
+      let historyIndex = -1;
+
+      function addText() {
+        const addtext = document.getElementById("text-input").value;
+        const words = addtext.split(/\s+/);
+        text.push(...words);
+        saveState();
+        document.getElementById("text-input").value = "";
+        loadText();
+      }
+
+      function loadText() {
+        const textList = document.getElementById("canvas");
+        textList.innerHTML = "";
+        for (const word of text) {
+          textList.innerHTML += `<span class='mt-20 text-center '>${word} </span>`;
+        }
+      }
+
+      function colorSetter() {
+        const colorset = document.getElementById("color-picker").value;
+        console.log(colorset);
+        const canvas = document.getElementById("canvas");
+        canvas.style.color = colorset;
+        saveState();
+      }
+
+      function fontSize() {
+        const fontsize = document.getElementById("size-num").value;
+        console.log(fontsize);
+        if (fontsize > 50) {
+          return;
+        }
+        if (fontsize < 0) {
+          return alert("You cannot take font size less than 0");
+        }
+        const canvas = document.getElementById("canvas");
+        canvas.style.fontSize = `${fontsize}px`;
+        saveState();
+      }
+
+      function fontFamiliy() {
+        const fontFam = document.getElementById("font-dropdown").value;
+        console.log(fontFam);
+        const canvasfam = document.getElementById("canvas");
+        canvasfam.style.fontFamily = fontFam;
+        saveState();
+      }
+
+      function saveState() {
+        // Save the state of text and update history
+        history = text.slice(0);
+        historyIndex = history.length - 1;
+        localStorage.setItem("text", JSON.stringify(text));
+      }
+
+      function undoData() {
+        if (historyIndex > 0) {
+          historyIndex--;
+          text.length = 0;
+          text.push(...history[historyIndex]);
+          saveState();
+          loadText();
+        }
+      }
+
+      function redoData() {
+        if (historyIndex < history.length - 1) {
+          historyIndex++;
+          text.length = 0;
+          text.push(...history[historyIndex]);
+          saveState();
+          loadText();
+        }
+      }
+
+      // Initial load of data
+
+      loadText();
+
+      function clearText() {
+        localStorage.removeItem("text");
+        text.length = 0;
+        const canvas = document.getElementById("canvas");
+        canvas.innerHTML = "";
+      }
+
+    </script>
+  </body>
+</html>
